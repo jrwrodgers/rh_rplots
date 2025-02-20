@@ -20,7 +20,7 @@ sudo systemctl restart rotorhazard.service
 On the Format page in RotorHazard you will see a Lap Time Stats section
 ![image](https://github.com/jrwrodgers/rh_rplots/blob/main/assets/134737.png)
 
-Everytime results are saved or resaved the results plot is updated and can be viewed on the link. The plot will look something like this:
+Everytime results are saved or resaved the results plot is updated and can be viewed on the link. The colours are linked to the pilot colours. The plot will look something like this:
 
 ![image](https://github.com/jrwrodgers/rh_rplots/blob/main/assets/134817.png)
 
