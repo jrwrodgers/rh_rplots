@@ -1,6 +1,4 @@
-'''Results Plots'''
 import logging
-import os
 from eventmanager import Evt
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -10,38 +8,39 @@ from flask import templating
 from flask.blueprints import Blueprint
 
 
-class Results_plot():
+class ResultsPlot:
     def __init__(self, rhapi):
         self.logger = logging.getLogger(__name__)
         self._rhapi = rhapi
 
     def init_plugin(self, args):
-        self.logger.info("Results Plot Plugin intialised")
-
+        self.logger.info("Results Plot Plugin initialised")
 
     def update_plot(self, args):
-
         raceclass = self._rhapi.db.raceclasses
         raceclass_results = self._rhapi.db.raceclass_results(raceclass[0])
 
         if raceclass_results['by_consecutives']:
             self.logger.info("rplots - creating plot")
-            self.logger.info([i['callsign'] for i in raceclass_results['by_consecutives']])
+#            self.logger.info([i['callsign'] for i in raceclass_results['by_consecutives']])
             pilot_race_order = [i['pilot_id'] for i in raceclass_results['by_consecutives']]
-            self.logger.info([i['pilot_id'] for i in raceclass_results['by_consecutives']])
-            self.logger.info([i['consecutives'] for i in raceclass_results['by_consecutives']])
-            self.logger.info([i['consecutives_base'] for i in raceclass_results['by_consecutives']])
+#            self.logger.info([i['pilot_id'] for i in raceclass_results['by_consecutives']])
+#            self.logger.info([i['consecutives'] for i in raceclass_results['by_consecutives']])
+#            self.logger.info([i['consecutives_base'] for i in raceclass_results['by_consecutives']])
+
             pilots = self._rhapi.db.pilots
 
             pilot_ids = []
             pilot_names = []
+            pilot_colours = []
             for i in range(len(pilots)):
                 pilot_ids.append(pilots[i].id)
                 pilot_names.append(pilots[i].callsign)
-
+                pilot_colours.append(pilots[i].color)
+#            self.logger.info(pilot_names)
+#            self.logger.info(pilot_colours)
             races = self._rhapi.db.pilotruns
-            max_race_id = max(race.race_id for race in races)
-
+#            max_race_id = max(race.race_id for race in races)
 
             pilot_list = []
             for i in range(len(pilots)):
@@ -67,8 +66,11 @@ class Results_plot():
 
             re_order_pilot_lap_times = []
             re_order_pilot_names = []
+            re_order_pilot_colour = []
             for i in pilot_race_order:
                 re_order_pilot_lap_times.append(pilot_lap_times[pilot_ids.index(i)])
+                re_order_pilot_colour.append(
+                    [pilot_colours[pilot_ids.index(i)] for j in range(len(pilot_lap_times[pilot_ids.index(i)]))])
                 re_order_pilot_names.append(
                     [pilot_names[pilot_ids.index(i)] for j in range(len(pilot_lap_times[pilot_ids.index(i)]))])
 
@@ -78,13 +80,16 @@ class Results_plot():
 
             fig, ax = plt.subplots(figsize=(10, 7))
 
-            palette = sns.color_palette("tab20", len(pilot_race_order))
+#            palette = sns.color_palette("tab20", len(pilot_race_order))
+
+            color_map = dict(zip(pilot_names, pilot_colours))
+
             medianprops = {
                 "color": "fuchsia",
                 "linewidth": 3,
                 "linestyle": "-"
             }
-            sns.boxplot(data=df, x="Lap Time", y="Pilot", hue="Pilot", palette=palette, orient="h", ax=ax,
+            sns.boxplot(data=df, x="Lap Time", y="Pilot", hue="Pilot", palette=color_map, orient="h", ax=ax,
                         legend=False,
                         medianprops=medianprops)
             sns.stripplot(data=df, x="Lap Time", y="Pilot", hue="Pilot", palette='dark:Black',
@@ -92,8 +97,8 @@ class Results_plot():
                           alpha=0.6,
                           dodge=False)
             ax.set_xlabel('Lap Time (seconds)', color="black")
-            for label, color in zip(ax.get_yticklabels(), palette):
-                label.set_color(color)
+            for label, name in zip(ax.get_yticklabels(), df["Pilot"].unique()):
+                label.set_color(color_map[name])
             min_x, max_x = df["Lap Time"].min(), df["Lap Time"].max()
             ax.set_xticks(range(int(min_x // 5) * 5, int(max_x // 5) * 5 + 5, 5))  # Ticks every 5 seconds
             ax.xaxis.grid(True, linestyle='--', alpha=0.4, color="gray")
@@ -105,8 +110,9 @@ class Results_plot():
 
 
 def initialize(rhapi):
-    results_plot = Results_plot(rhapi)
+    results_plot = ResultsPlot(rhapi)
     rhapi.events.on(Evt.STARTUP, results_plot.init_plugin)
+    rhapi.events.on(Evt.STARTUP, results_plot.update_plot)
     rhapi.events.on(Evt.LAPS_SAVE, results_plot.update_plot)
     rhapi.events.on(Evt.LAPS_RESAVE, results_plot.update_plot)
     rhapi.ui.register_panel("Lap Time Stats", "Lap Time Stats", "format")
@@ -123,8 +129,6 @@ def initialize(rhapi):
     @bp.route('/results_plot')
     def results_plot_homePage():
         return templating.render_template('results_plot.html', serverInfo=None,
-                                          getOption=rhapi.db.option,__=rhapi.__)
+                                          getOption=rhapi.db.option, __=rhapi.__)
     rhapi.ui.blueprint_add(bp)
     rhapi.ui.register_markdown("Lap Time Stats", "Results Plot", "Plots available [here](/results_plot)")
-
-
