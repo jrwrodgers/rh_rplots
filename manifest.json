@@ -6,7 +6,7 @@
     "info_uri": "https://github.com/jrwrodgers/rh_rplots",
     "license": "RotorHazard",
     "license_uri": "https://github.com/RotorHazard/RotorHazard/blob/main/LICENSE",
-    "version": "1.01",
+    "version": "1.02",
     "required_rhapi_version": "1.0",
     "update_uri": null,
     "text_domain": null
