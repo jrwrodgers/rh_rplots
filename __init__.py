@@ -20,13 +20,14 @@ class ResultsPlot:
         raceclass = self._rhapi.db.raceclasses
         raceclass_results = self._rhapi.db.raceclass_results(raceclass[0])
 
-        if raceclass_results['by_consecutives']:
+        if raceclass_results is not None:
             self.logger.info("rplots - creating plot")
-#            self.logger.info([i['callsign'] for i in raceclass_results['by_consecutives']])
+            #TODO - check what race format and get pilot results order accordingly
+    #            self.logger.info([i['callsign'] for i in raceclass_results['by_consecutives']])
             pilot_race_order = [i['pilot_id'] for i in raceclass_results['by_consecutives']]
-#            self.logger.info([i['pilot_id'] for i in raceclass_results['by_consecutives']])
-#            self.logger.info([i['consecutives'] for i in raceclass_results['by_consecutives']])
-#            self.logger.info([i['consecutives_base'] for i in raceclass_results['by_consecutives']])
+    #            self.logger.info([i['pilot_id'] for i in raceclass_results['by_consecutives']])
+    #            self.logger.info([i['consecutives'] for i in raceclass_results['by_consecutives']])
+    #            self.logger.info([i['consecutives_base'] for i in raceclass_results['by_consecutives']])
 
             pilots = self._rhapi.db.pilots
 
@@ -37,10 +38,7 @@ class ResultsPlot:
                 pilot_ids.append(pilots[i].id)
                 pilot_names.append(pilots[i].callsign)
                 pilot_colours.append(pilots[i].color)
-#            self.logger.info(pilot_names)
-#            self.logger.info(pilot_colours)
             races = self._rhapi.db.pilotruns
-#            max_race_id = max(race.race_id for race in races)
 
             pilot_list = []
             for i in range(len(pilots)):
@@ -77,11 +75,7 @@ class ResultsPlot:
             data_list = {"Pilot": list(itertools.chain(*re_order_pilot_names)),
                          "Lap Time": list(itertools.chain(*re_order_pilot_lap_times))}
             df = pd.DataFrame.from_dict(data_list)
-
             fig, ax = plt.subplots(figsize=(10, 7))
-
-#            palette = sns.color_palette("tab20", len(pilot_race_order))
-
             color_map = dict(zip(pilot_names, pilot_colours))
 
             medianprops = {
@@ -103,7 +97,7 @@ class ResultsPlot:
             ax.set_xticks(range(int(min_x // 5) * 5, int(max_x // 5) * 5 + 5, 5))  # Ticks every 5 seconds
             ax.xaxis.grid(True, linestyle='--', alpha=0.4, color="gray")
             plt.savefig("plugins/rh_rplots/static/boxplot.png", dpi=300, bbox_inches='tight')
-            plt.show()
+    #            plt.show()
             self.logger.info("Plot Done")
         else:
             self.logger.info("No results to plot")
@@ -112,7 +106,6 @@ class ResultsPlot:
 def initialize(rhapi):
     results_plot = ResultsPlot(rhapi)
     rhapi.events.on(Evt.STARTUP, results_plot.init_plugin)
-    rhapi.events.on(Evt.STARTUP, results_plot.update_plot)
     rhapi.events.on(Evt.LAPS_SAVE, results_plot.update_plot)
     rhapi.events.on(Evt.LAPS_RESAVE, results_plot.update_plot)
     rhapi.ui.register_panel("Lap Time Stats", "Lap Time Stats", "format")
